@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:path/path.dart' as p;
 import 'package:text_labelling_flutter/services/flags_repository.dart';
 import 'package:text_labelling_flutter/services/jsonl_repository.dart';
 import 'package:text_labelling_flutter/session/label_session.dart';
@@ -31,7 +32,7 @@ void main() {
 
       expect(session.records, hasLength(2));
       expect(session.progressLabel, '1 / 2');
-      expect(session.imagesDir, 'images');
+      expect(p.basename(session.imagesDir!), 'images');
 
       session.toggleFlag('nudes_trade');
       expect(session.currentRecord!.selectedFlags, {'nudes_trade'});
