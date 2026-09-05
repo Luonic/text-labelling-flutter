@@ -6,7 +6,7 @@ plugins {
 
 android {
     namespace = "com.luonic.text_labelling_flutter"
-    compileSdk = flutter.compileSdkVersion
+    compileSdk = 37
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
