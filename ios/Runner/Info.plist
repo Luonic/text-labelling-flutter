@@ -30,8 +30,48 @@
 	<true/>
 	<key>UIFileSharingEnabled</key>
 	<true/>
+	<key>UISupportsDocumentBrowser</key>
+	<true/>
 	<key>NSDocumentsFolderUsageDescription</key>
 	<string>This app needs access to JSONL labelling files and the images folder next to them.</string>
+	<key>CFBundleDocumentTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeName</key>
+			<string>JSON Lines</string>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>LSHandlerRank</key>
+			<string>Owner</string>
+			<key>LSItemContentTypes</key>
+			<array>
+				<string>com.luonic.jsonl</string>
+				<string>public.json</string>
+				<string>public.text</string>
+			</array>
+		</dict>
+	</array>
+	<key>UTExportedTypeDeclarations</key>
+	<array>
+		<dict>
+			<key>UTTypeConformsTo</key>
+			<array>
+				<string>public.json</string>
+				<string>public.text</string>
+			</array>
+			<key>UTTypeDescription</key>
+			<string>JSON Lines</string>
+			<key>UTTypeIdentifier</key>
+			<string>com.luonic.jsonl</string>
+			<key>UTTypeTagSpecification</key>
+			<dict>
+				<key>public.filename-extension</key>
+				<array>
+					<string>jsonl</string>
+				</array>
+			</dict>
+		</dict>
+	</array>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

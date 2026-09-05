@@ -135,7 +135,7 @@ class LabelSession extends ChangeNotifier {
     dirty = false;
     errorMessage = null;
     final imageFolder = imagesDir;
-    if (Platform.isAndroid &&
+    if ((Platform.isAndroid || Platform.isIOS || Platform.isMacOS) &&
         imageFolder != null &&
         !Directory(imageFolder).existsSync()) {
       errorMessage =

@@ -31,12 +31,21 @@ After moving to the next or previous page save flags to the same jsonl file by r
 
 ## Run
 
+Android, iOS, macOS, and Linux desktop are enabled.
+
 ```bash
 flutter pub get
-flutter run
+flutter run                     # current device
+flutter run -d linux
+flutter run -d macos            # from a Mac
+flutter run -d <ios-simulator>  # from a Mac
 ```
 
-Android, iOS, and Linux desktop are enabled. On a phone, copy a JSONL file and an `images` folder next to it onto the device, then open the JSONL from the app.
+Copy a JSONL file and an `images` folder next to it onto the device (or keep them together on disk), then open them from the app.
+
+- **Android:** grant **All files access**, then pick the JSONL from device storage (not Drive).
+- **iPhone / iPad:** pick the **folder** that contains the JSONL and `images/` (Files app). Picking the JSONL file alone copies it into a temp directory, so thumbnails and save-back would fail.
+- **Mac:** pick the JSONL file. If thumbnails do not load, pick the folder instead. The sandboxed app can only read files and folders you select.
 
 A sample dataset lives in `example/sample.jsonl` with thumbnails in `example/images/`.
 
@@ -71,3 +80,5 @@ The flag catalog is bundled as `assets/flags.json` and copied to the app documen
 Saves also run when the app is backgrounded and from the toolbar save button, so the last page is not lost if you never swipe away from it.
 
 On Android 11+, grant **All files access** when the app asks. `.jsonl` is not a standard Android MIME type, so the picker shows all files — choose the JSONL from device storage (Downloads or a local folder), not from Drive. The app then resolves the real path so it can load `./images` and rewrite the original file.
+
+On iOS the document picker copies individual files into tmp, so the app asks you to select the dataset **folder** instead. On macOS, `file_picker` requires the App Sandbox user-selected files **read-write** entitlement (already set in `macos/Runner/*.entitlements`).

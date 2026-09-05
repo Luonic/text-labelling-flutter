@@ -243,6 +243,20 @@ class _EmptyState extends StatelessWidget {
                 textAlign: TextAlign.center,
               ),
             ],
+            if (Platform.isIOS) ...[
+              const SizedBox(height: 8),
+              const Text(
+                'On iPhone and iPad, copy the JSONL and images folder onto the device, then pick that folder in Files (not the JSONL file itself).',
+                textAlign: TextAlign.center,
+              ),
+            ],
+            if (Platform.isMacOS) ...[
+              const SizedBox(height: 8),
+              const Text(
+                'On Mac, pick the JSONL file. If thumbnails do not load, pick the folder that contains the file and the images directory.',
+                textAlign: TextAlign.center,
+              ),
+            ],
             const SizedBox(height: 24),
             FilledButton.icon(
               key: const Key('open-jsonl-button'),

@@ -2,11 +2,9 @@ import 'dart:io';
 
 import 'package:android_file_picker/android_file_picker.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:path/path.dart' as p;
 
 import 'android_content_path.dart';
-
-const _jsonlExtensions = {'.jsonl', '.json'};
+import 'dataset_location.dart';
 
 const _androidPickerOptions = FilePickerAndroidOptions(
   safOptions: AndroidSAFOptions(
@@ -21,6 +19,9 @@ const _androidPickerOptions = FilePickerAndroidOptions(
 Future<String?> pickJsonlPath() async {
   if (Platform.isAndroid) {
     return _pickOnAndroid();
+  }
+  if (Platform.isIOS || Platform.isMacOS) {
+    return _pickOnDarwin();
   }
   return _pickWithExtensionFilter();
 }
@@ -45,6 +46,39 @@ Future<String?> _pickWithExtensionFilter() async {
   );
 }
 
+Future<String?> _pickOnDarwin() async {
+  // iOS file picks are copied into tmp, which cannot see ./images or rewrite
+  // the original JSONL. Ask for the dataset folder instead.
+  if (Platform.isIOS) {
+    return _pickDatasetDirectory(
+      title: 'Select the folder that contains the JSONL and images/',
+    );
+  }
+  return _pickOnMacOS();
+}
+
+Future<String?> _pickOnMacOS() async {
+  final file = await FilePicker.pickFile(
+    dialogTitle: 'Select JSONL file',
+    type: FileType.custom,
+    allowedExtensions: const ['jsonl', 'json'],
+  );
+  if (file == null) {
+    return null;
+  }
+  _ensureJsonlName(file.name);
+
+  final path = file.path;
+  if (path != null && path.isNotEmpty && await canUseLabellingDataset(path)) {
+    return path;
+  }
+
+  return _pickDatasetDirectory(
+    title: 'Select the folder that contains the JSONL and images/',
+    preferredName: file.name,
+  );
+}
+
 Future<String?> _pickOnAndroid() async {
   // `.jsonl` has no MIME type in Android's map, so a custom-extension picker
   // would hide those files and only show `.json`. Allow any file, then check.
@@ -63,28 +97,44 @@ Future<String?> _pickOnAndroid() async {
     return resolved;
   }
 
-  var directory = await FilePicker.getDirectoryPath(
-    dialogTitle: 'Select the folder that contains the JSONL and images/',
+  return _pickDatasetDirectory(
+    title: 'Select the folder that contains the JSONL and images/',
+    preferredName: file.name,
+    androidUriMapper: filesystemPathFromContentUri,
   );
+}
+
+Future<String?> _pickDatasetDirectory({
+  required String title,
+  String? preferredName,
+  String? Function(Uri uri)? androidUriMapper,
+}) async {
+  var directory = await FilePicker.getDirectoryPath(dialogTitle: title);
   if (directory == null || directory.isEmpty) {
+    if (preferredName == null) {
+      return null;
+    }
     throw StateError(
       'Could not use the picked file. Select the folder that contains '
-      '${file.name} and the images directory.',
+      '$preferredName and the images directory.',
     );
   }
-  if (directory.startsWith('content:')) {
-    directory = filesystemPathFromContentUri(Uri.parse(directory)) ?? directory;
+  if (directory.startsWith('content:') && androidUriMapper != null) {
+    directory = androidUriMapper(Uri.parse(directory)) ?? directory;
   }
 
-  final inFolder = File(p.join(directory, file.name));
-  if (await inFolder.exists()) {
-    return inFolder.path;
+  final found = await findJsonlInDirectory(
+    directory,
+    preferredName: preferredName,
+  );
+  if (found != null) {
+    return found;
   }
-  final fallback = await _firstJsonlIn(directory);
-  if (fallback != null) {
-    return fallback;
-  }
-  throw StateError('No JSONL file named ${file.name} was found in $directory.');
+  throw StateError(
+    preferredName == null
+        ? 'No JSONL file was found in $directory.'
+        : 'No JSONL file named $preferredName was found in $directory.',
+  );
 }
 
 Future<String?> resolveWritableJsonlPath(PlatformFile file) async {
@@ -106,7 +156,7 @@ Future<String?> resolveWritableJsonlPath(PlatformFile file) async {
   }
 
   for (final candidate in candidates) {
-    if (isFilePickerCachePath(candidate)) {
+    if (isFilePickerCachePath(candidate) || isEphemeralPickerPath(candidate)) {
       continue;
     }
     if (await File(candidate).exists()) {
@@ -123,26 +173,7 @@ Future<String?> resolveWritableJsonlPath(PlatformFile file) async {
 }
 
 void _ensureJsonlName(String name) {
-  final extension = p.extension(name).toLowerCase();
-  if (!_jsonlExtensions.contains(extension)) {
+  if (!isJsonlFileName(name)) {
     throw StateError('Please pick a .jsonl (or .json) file. Selected: $name');
   }
-}
-
-Future<String?> _firstJsonlIn(String directory) async {
-  final dir = Directory(directory);
-  if (!await dir.exists()) {
-    return null;
-  }
-  final files = await dir
-      .list()
-      .where((entity) => entity is File)
-      .cast<File>()
-      .toList();
-  for (final file in files) {
-    if (_jsonlExtensions.contains(p.extension(file.path).toLowerCase())) {
-      return file.path;
-    }
-  }
-  return null;
 }
