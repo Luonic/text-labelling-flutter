@@ -70,4 +70,4 @@ The flag catalog is bundled as `assets/flags.json` and copied to the app documen
 
 Saves also run when the app is backgrounded and from the toolbar save button, so the last page is not lost if you never swipe away from it.
 
-On Android 11+, grant **All files access** if the picker cannot write back to the original JSONL or cannot see `./images`.
+On Android 11+, grant **All files access** when the app asks. `.jsonl` is not a standard Android MIME type, so the picker shows all files — choose the JSONL from device storage (Downloads or a local folder), not from Drive. The app then resolves the real path so it can load `./images` and rewrite the original file.

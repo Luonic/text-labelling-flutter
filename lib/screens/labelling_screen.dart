@@ -1,6 +1,9 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../services/storage_permissions.dart';
 import '../session/label_session.dart';
 import '../widgets/flag_grid.dart';
 import '../widgets/record_card.dart';
@@ -66,6 +69,40 @@ class _LabellingScreenState extends State<LabellingScreen>
     setState(() {});
   }
 
+  Future<void> _openJsonl() async {
+    if (Platform.isAndroid) {
+      final allowed = await hasAllFilesAccess();
+      if (!allowed && mounted) {
+        final go = await showDialog<bool>(
+          context: context,
+          builder: (context) {
+            return AlertDialog(
+              title: const Text('Allow file access'),
+              content: const Text(
+                'Android needs All files access so the app can read images '
+                'next to your JSONL file and save flags back to that same file.',
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(false),
+                  child: const Text('Not now'),
+                ),
+                FilledButton(
+                  onPressed: () => Navigator.of(context).pop(true),
+                  child: const Text('Continue'),
+                ),
+              ],
+            );
+          },
+        );
+        if (go != true) {
+          return;
+        }
+      }
+    }
+    await session.pickAndOpen();
+  }
+
   Future<void> _goTo(int index) async {
     if (index < 0 || index >= session.records.length) {
       return;
@@ -114,7 +151,7 @@ class _LabellingScreenState extends State<LabellingScreen>
               IconButton(
                 key: const Key('open-jsonl'),
                 tooltip: 'Open JSONL',
-                onPressed: session.busy ? null : session.pickAndOpen,
+                onPressed: session.busy ? null : _openJsonl,
                 icon: const Icon(Icons.folder_open),
               ),
             ],
@@ -122,7 +159,7 @@ class _LabellingScreenState extends State<LabellingScreen>
           body: Stack(
             children: [
               if (session.jsonlPath == null)
-                _EmptyState(onOpen: session.pickAndOpen)
+                _EmptyState(onOpen: _openJsonl)
               else if (session.records.isEmpty)
                 const Center(child: Text('No records in this file'))
               else
@@ -199,6 +236,13 @@ class _EmptyState extends StatelessWidget {
               'Images are loaded from an images folder next to the file.',
               textAlign: TextAlign.center,
             ),
+            if (Platform.isAndroid) ...[
+              const SizedBox(height: 8),
+              const Text(
+                'On Android 11+, grant All files access when asked, then pick the JSONL from device storage (not Drive).',
+                textAlign: TextAlign.center,
+              ),
+            ],
             const SizedBox(height: 24),
             FilledButton.icon(
               key: const Key('open-jsonl-button'),

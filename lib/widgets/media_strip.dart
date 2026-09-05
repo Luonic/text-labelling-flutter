@@ -48,7 +48,12 @@ class MediaThumbnail extends StatelessWidget {
   Widget build(BuildContext context) {
     final kind = mediaKindForName(name);
     final file = File(filePath);
-    final exists = file.existsSync();
+    var exists = false;
+    try {
+      exists = file.existsSync();
+    } on FileSystemException {
+      exists = false;
+    }
 
     Widget child;
     if (kind == MediaKind.image && exists) {

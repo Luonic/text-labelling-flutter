@@ -1,10 +1,12 @@
-import 'package:file_picker/file_picker.dart';
+import 'dart:io';
+
 import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
 
 import '../models/flag_catalog.dart';
 import '../models/label_record.dart';
 import '../services/flags_repository.dart';
+import '../services/jsonl_picker.dart';
 import '../services/jsonl_repository.dart';
 import '../services/storage_permissions.dart';
 
@@ -19,13 +21,18 @@ class LabelSession extends ChangeNotifier {
     PermissionRequest? requestPermissions,
   }) : flagsRepository = flagsRepository ?? AssetDocumentFlagsRepository(),
        jsonlRepository = jsonlRepository ?? const FileJsonlRepository(),
-       pickPath = pickPath ?? _pickJsonlPath,
-       requestPermissions = requestPermissions ?? requestStoragePermissions;
+       pickPath = pickPath ?? pickJsonlPath,
+       requestPermissions =
+           requestPermissions ?? LabelSession._defaultRequestPermissions;
 
   final FlagsRepository flagsRepository;
   final JsonlRepository jsonlRepository;
   final PathPicker pickPath;
   final PermissionRequest requestPermissions;
+
+  static Future<void> _defaultRequestPermissions() async {
+    await requestStoragePermissions();
+  }
 
   List<String> availableFlags = List<String>.from(defaultFlagNames);
   List<LabelRecord> records = [];
@@ -127,6 +134,13 @@ class LabelSession extends ChangeNotifier {
     currentIndex = 0;
     dirty = false;
     errorMessage = null;
+    final imageFolder = imagesDir;
+    if (Platform.isAndroid &&
+        imageFolder != null &&
+        !Directory(imageFolder).existsSync()) {
+      errorMessage =
+          'Opened ${p.basename(path)}, but no images folder was found at $imageFolder.';
+    }
     notifyListeners();
   }
 
@@ -173,24 +187,4 @@ class LabelSession extends ChangeNotifier {
     }
     notifyListeners();
   }
-}
-
-Future<String?> _pickJsonlPath() async {
-  final file = await FilePicker.pickFile(
-    dialogTitle: 'Select JSONL file',
-    type: FileType.custom,
-    allowedExtensions: const ['jsonl', 'json'],
-  );
-  if (file == null) {
-    return null;
-  }
-  final path = file.path;
-  if (path != null && path.isNotEmpty) {
-    return path;
-  }
-  throw StateError(
-    'Could not resolve a filesystem path for ${file.name}. '
-    'Pick the JSONL file from device storage so images in ./images can be loaded '
-    'and flags can be written back.',
-  );
 }

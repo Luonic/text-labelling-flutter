@@ -35,6 +35,7 @@ dependencies:
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
   file_picker: ^12.2.0
+  android_file_picker: ^1.1.0
   path: ^1.9.1
   path_provider: ^2.1.6
   permission_handler: ^13.0.2
